@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist de Gira | Templo Tucuvori</title>
+<style>
+:root{--green:#176b3a;--green-dark:#104a29;--green-light:#eaf4ed;--black:#171a18;--white:#fff;--muted:#66716a;--line:#d9e2db;--paper:#f5f7f5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--black);font-family:Arial,Helvetica,sans-serif;line-height:1.45}
+header{background:var(--green-dark);color:white;padding:28px 18px 24px;text-align:center;border-bottom:6px solid #7eb48e}
+header .symbol{font-size:28px;margin-bottom:6px}
+header h1{font-size:clamp(20px,4vw,30px);letter-spacing:.04em;margin:0}
+header p{margin:7px 0 0;font-size:14px;letter-spacing:.08em}
+main{max-width:1050px;margin:24px auto;padding:0 16px 40px}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 3px 12px #17251a0a}
+.panel h2{font-size:18px;margin:0 0 16px;color:var(--green-dark)}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:700;color:#34443a}
+input,select{font:inherit;padding:11px 12px;border:1px solid #bac8bd;border-radius:8px;background:white;color:var(--black);min-width:0}
+input:focus,select:focus{outline:2px solid #8fc6a0;outline-offset:1px}
+.helper{font-size:12px;color:var(--muted);margin-top:8px}
+.sync-status{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-top:14px;color:var(--green-dark)}
+.sync-dot{width:9px;height:9px;border-radius:50%;background:#d99b25;display:inline-block;flex:0 0 auto}
+.sync-status[data-state="connected"] .sync-dot{background:#218747}
+.sync-status[data-state="offline"] .sync-dot,.sync-status[data-state="error"] .sync-dot{background:#c43b36}
+.progress-wrap{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.progress{height:10px;background:#e4ebe5;border-radius:99px;overflow:hidden;flex:1}
+.progress-bar{height:100%;width:0;background:var(--green);transition:width .2s}
+.progress-text{font-size:13px;font-weight:700;white-space:nowrap}
+.category{border:1px solid var(--line);border-radius:10px;margin:12px 0;overflow:hidden;break-inside:avoid}
+.category h3{background:var(--green-light);color:var(--green-dark);font-size:15px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line)}
+.task-list{padding:6px 14px}
+.task-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #edf1ed}
+.task{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;font-size:14px}
+.completed-by{width:210px;flex:0 0 210px;padding:7px 9px;font-size:12px}
+.task input{accent-color:var(--green);width:18px;height:18px;margin:1px 0 0;flex:0 0 auto}
+.task span{flex:1}
+.task input:checked+span{color:#66716a;text-decoration:line-through}
+.task-extra{padding:0 0 10px 28px;display:flex;flex-direction:column;gap:5px}
+.task-extra label{font-size:12px;color:var(--green-dark);font-weight:700}
+.task-extra input{width:220px;max-width:100%;padding:9px 10px;font-size:13px;border:1px solid #bac8bd;border-radius:7px}
+.pades-checklist{margin-top:10px;max-width:760px}
+.pades-checklist-title{font-size:13px;font-weight:700;color:var(--green-dark);margin:8px 0 2px}
+.pade-row{padding:8px 0}
+.pade-row .task span{overflow-wrap:anywhere}
+@media(max-width:620px){.task-row{align-items:flex-start;flex-wrap:wrap}.task{flex-basis:100%}.completed-by{width:calc(100% - 28px);flex-basis:calc(100% - 28px);margin-left:28px}}
+@media print{.completed-by{width:150px;flex-basis:150px;padding:3px 4px;font-size:10px}.task-extra{padding:0 0 6px 20px}.task-extra input{padding:3px 5px;border:0;border-bottom:1px solid #999;border-radius:0;font-size:10px}}
+.task small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 0}
+button{border:0;border-radius:9px;padding:12px 16px;font:700 14px Arial;cursor:pointer}
+.primary{background:var(--green);color:white}
+.primary:hover{background:var(--green-dark)}
+.secondary{background:white;color:var(--green-dark);border:1px solid var(--green)}
+.danger{background:#f5e9e9;color:#812a2a;border:1px solid #e4caca}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:8px 0 22px}
+.tabs{display:flex;gap:8px;margin:0 0 16px;padding:6px;background:#e6eee8;border-radius:12px;border:1px solid var(--line)}
+.tab-btn{flex:1;background:transparent;color:var(--green-dark);border:1px solid transparent;padding:12px 14px;border-radius:8px}
+.tab-btn[aria-selected="true"]{background:var(--green);color:white;box-shadow:0 2px 5px #00000012}
+.tab-panel[hidden]{display:none}
+@media(max-width:620px){.tabs{gap:5px}.tab-btn{padding:10px 6px;font-size:13px}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.panel{padding:15px}header{padding-top:22px}}
+@media print{
+ @page{size:A4;margin:12mm}
+ body{background:white;font-size:11px;color:#111}
+ header{background:#104a29!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:14px;border-bottom:4px solid #7eb48e}
+ header .symbol{font-size:18px}header h1{font-size:19px}header p{font-size:10px}
+ main{max-width:none;margin:10px 0;padding:0}
+ .panel{box-shadow:none;border:1px solid #bbb;border-radius:6px;padding:12px;margin-bottom:10px}
+ .panel h2{font-size:14px;margin-bottom:8px}
+ .fields{gap:8px}.field{gap:3px}input,select{padding:5px;border:0;border-bottom:1px solid #999;border-radius:0;font-size:11px}
+ .helper,.actions,footer,.no-print{display:none!important}
+ .category{margin:7px 0;border:1px solid #bbb;border-radius:4px;break-inside:avoid}
+ .category h3{background:#eaf4ed!important;color:#104a29!important;padding:7px 9px;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .task-list{padding:2px 9px}.task{padding:4px 0;font-size:10px;gap:6px}
+ .task input{width:12px;height:12px;appearance:none;border:1px solid #222;border-radius:2px;position:relative}
+ .task input:checked{background:#176b3a!important;border-color:#176b3a;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .task input:checked::after{content:"✓";position:absolute;color:white;font-size:10px;left:1px;top:-2px}
+ .task input:checked+span{text-decoration:none;color:#111}
+ .progress-wrap{margin-bottom:8px}.progress{height:6px}.progress-bar{background:#176b3a!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* Refinamento visual: identidade verde, dourado discreto e melhor leitura */
+:root{--green:#176b3a;--green-dark:#103d27;--green-light:#edf5ef;--black:#1c2921;--muted:#65746a;--line:#dce6de;--paper:#f1f5f1;--gold:#c5a45b;--white:#fff}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(ellipse at top,#e6efe7 0,#f5f7f4 48%,#edf2ed 100%);font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;line-height:1.55}
+header{position:relative;overflow:hidden;background:linear-gradient(135deg,#0d3521 0%,#14512f 55%,#1d7040 100%);padding:38px 20px 32px;border-bottom:4px solid var(--gold);box-shadow:0 8px 28px #123d2526}
+header:before,header:after{content:"✦";position:absolute;color:#ffffff12;font-size:150px;line-height:1;pointer-events:none}
+header:before{left:5%;top:-44px}header:after{right:6%;bottom:-64px}
+header .symbol{position:relative;color:#e5cd8e;font-size:34px;margin-bottom:10px;text-shadow:0 2px 12px #0003}
+header h1{position:relative;font-size:clamp(21px,4vw,32px);line-height:1.2;letter-spacing:.035em;text-wrap:balance}
+header p{position:relative;color:#e3eee5;font-size:12px;font-weight:700;letter-spacing:.18em;margin-top:12px}
+main{max-width:1120px;margin:28px auto;padding:0 20px 44px}
+.panel{background:rgba(255,255,255,.96);border:1px solid #dce6de;border-radius:18px;padding:24px;margin-bottom:20px;box-shadow:0 8px 24px #173b2209,0 1px 3px #173b2208}
+.panel h2{font-size:19px;letter-spacing:-.02em;margin:0 0 18px;color:var(--green-dark);display:flex;align-items:center;gap:10px}
+.panel h2:before{content:"";display:inline-block;width:5px;height:22px;border-radius:8px;background:linear-gradient(var(--gold),#e4d2a0)}
+.fields{gap:16px}.field{gap:7px}label{font-size:12px;letter-spacing:.015em;color:#43554a}
+input,select{padding:12px 13px;border:1px solid #d2ddd4;border-radius:10px;background:#fbfdfb;transition:border-color .18s,box-shadow .18s}
+input:hover,select:hover{border-color:#a8c4af}input:focus,select:focus{outline:none;border-color:#5b9b6d;box-shadow:0 0 0 3px #5b9b6d22}
+.helper{font-size:12px;line-height:1.6;color:var(--muted)}
+.sync-status{padding:10px 12px;border-radius:10px;background:#f2f7f2;border:1px solid #e0eae1}
+.sync-dot{box-shadow:0 0 0 3px #d99b251f}
+.progress-wrap{gap:14px;margin:4px 0 18px}.progress{height:11px;background:#e8eee9;border:1px solid #e0e8e1}.progress-bar{background:linear-gradient(90deg,#176b3a,#4e9b63);border-radius:99px}
+.progress-text{font-size:12px;color:var(--green-dark);background:#edf5ef;padding:5px 9px;border-radius:99px}
+.category{border:1px solid #dce6de;border-radius:13px;margin:14px 0;background:#fff;box-shadow:0 2px 7px #183d2206;transition:border-color .18s,box-shadow .18s}
+.category:hover{border-color:#bfd3c3;box-shadow:0 5px 14px #183d220b}
+.category h3{background:linear-gradient(90deg,#edf5ef,#f7faf7);color:#16452b;font-size:14px;font-weight:750;padding:14px 16px;border-bottom:1px solid #e1eae2}
+.task-list{padding:7px 16px 10px}.task-row{gap:14px;padding:11px 0;border-bottom:1px solid #f0f3f0}
+.task-row:last-child{border-bottom:0}.task{gap:11px;font-size:13px;line-height:1.5}
+.task input{accent-color:var(--green);width:18px;height:18px;cursor:pointer;margin-top:2px}
+.task input:checked+span{color:#78847b;text-decoration:line-through;text-decoration-thickness:1px}
+.completed-by{width:195px;flex-basis:195px;padding:9px 10px;font-size:12px;background:#fbfcfb}
+.task-extra{padding:4px 0 12px 29px}.task-extra input{background:#fbfdfb}
+.pades-checklist-title{font-size:12px;letter-spacing:.03em;text-transform:uppercase;margin:12px 0 5px}
+.actions{gap:10px;margin:20px 0 0}button{border-radius:10px;padding:12px 17px;font:700 13px Inter,"Segoe UI",Arial,sans-serif;transition:transform .15s,box-shadow .15s,background .15s}button:hover{transform:translateY(-1px);box-shadow:0 4px 12px #173b2218}button:active{transform:translateY(0)}.primary{background:linear-gradient(135deg,#1c7541,#12532f)}.secondary{background:#fff;border-color:#bfd2c2}.danger{background:#fff5f4;border-color:#efd6d3;color:#8a3330}
+.tabs{position:sticky;top:8px;z-index:5;box-shadow:0 4px 16px #183d220b;background:#e8f0e9;border-color:#d6e3d8;backdrop-filter:blur(8px)}
+.tab-btn{font-size:14px;font-weight:750}.tab-btn[aria-selected="true"]{background:linear-gradient(135deg,#1b7541,#104a29)}
+footer{padding:18px 12px 28px;letter-spacing:.02em}
+@media(max-width:620px){header{padding:30px 16px 26px}header:before{left:-24px}header:after{right:-20px}main{padding:0 12px 30px;margin:18px auto}.panel{padding:17px;border-radius:14px}.panel h2{font-size:17px}.task-list{padding:5px 12px 8px}.task-row{gap:8px}.completed-by{width:calc(100% - 28px);flex-basis:calc(100% - 28px);margin-left:28px}.tabs{top:4px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important}}
+@media print{body{background:#fff}header{box-shadow:none}.panel{box-shadow:none}.tabs{position:static}}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="symbol" aria-hidden="true">✦</div>
+  <h1>TEMPLO DE CABOCLO UBIRAJARA E VOVÓ RITA</h1>
+  <p>TUCUVORI · CHECKLIST DE GIRA</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>Identificação da Gira</h2>
+    <div class="fields">
+      <div class="field"><label for="giraDate">Dia da Gira</label><input id="giraDate" type="date"></div>
+      <div class="field"><label for="giraType">Foi Gira de quê?</label>
+        <input id="giraType" type="text" placeholder="Ex.: Caboclos, Pretos-Velhos, Exu...">
+      </div>
+      <div class="field"><label for="responsible">Pessoa responsável pelo checklist</label><input id="responsible" type="text" placeholder="Nome completo"></div>
+      <div class="field"><label for="exitGroup">Grupo de saída (Pós-Gira)</label><input id="exitGroup" type="text" placeholder="Nome do grupo ou integrantes"></div>
+    </div>
+    <div class="sync-status" id="syncStatus" role="status" aria-live="polite"><span class="sync-dot"></span><span id="syncText">Conectando ao Firebase...</span></div>
+    <p class="helper">As informações e marcações são sincronizadas pelo Firebase entre os dispositivos que acessarem esta versão online. Use “Exportar para PDF” para salvar uma cópia.</p>
+  </section>
+
+  <div class="tabs no-print" role="tablist" aria-label="Etapa da gira">
+    <button class="tab-btn" id="preTab" type="button" role="tab" aria-selected="true" aria-controls="prePanel">Pré-Gira</button>
+    <button class="tab-btn" id="postTab" type="button" role="tab" aria-selected="false" aria-controls="postPanel">Pós-Gira</button>
+  </div>
+
+  <section class="panel tab-panel" id="prePanel" role="tabpanel" aria-labelledby="preTab">
+    <h2>Conferência Pré-Gira</h2>
+    <div class="progress-wrap"><div class="progress"><div class="progress-bar" id="preProgress"></div></div><span class="progress-text" id="preCount">0/0 concluídos</span></div>
+    <div id="preChecklist"></div>
+  </section>
+
+  <section class="panel tab-panel" id="postPanel" role="tabpanel" aria-labelledby="postTab" hidden>
+    <h2>Conferência Pós-Gira</h2>
+    <div class="progress-wrap"><div class="progress"><div class="progress-bar" id="postProgress"></div></div><span class="progress-text" id="postCount">0/0 concluídos</span></div>
+    <div id="postChecklist"></div>
+  </section>
+
+  <div class="actions no-print">
+    <button class="primary" id="pdfBtn" type="button">Exportar para PDF / Imprimir</button>
+    <button class="secondary" id="resetChecks" type="button">Desmarcar tarefas</button>
+    <button class="danger" id="clearAll" type="button">Limpar formulário</button>
+  </div>
+  <p class="helper no-print">No diálogo de impressão, selecione “Salvar como PDF” como destino. Para incluir as cores, habilite “Gráficos de plano de fundo”, se disponível.</p>
+</main>
+<footer>Templo de Caboclo Ubirajara e Vovó Rita · Tucuvori</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getDatabase, ref, set, update, onValue, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCGjD42273kmD67J5ry8DN_W3DjpnQOwzU",
+  authDomain: "gestao-de-estoque-tucuvori.firebaseapp.com",
+  databaseURL: "https://gestao-de-estoque-tucuvori-default-rtdb.firebaseio.com",
+  projectId: "gestao-de-estoque-tucuvori",
+  storageBucket: "gestao-de-estoque-tucuvori.firebasestorage.app",
+  messagingSenderId: "342866757788",
+  appId: "1:342866757788:web:115da1a308b93af3008559"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const sharedPath = "checklists/tucuvori/shared";
+const sharedRef = ref(db, sharedPath);
+const connectedRef = ref(db, ".info/connected");
+
+const emptyState = () => ({
+  fields: { giraDate:"", giraType:"", responsible:"", exitGroup:"", padesDetails:"" },
+  checks: {},
+  completedBy: {}
+});
+let state = emptyState();
+let applyingRemote = false;
+let databaseReady = false;
+let initializedFromServer = false;
+let writeQueue = Promise.resolve();
+let lastRemoteFingerprint = "";
+
+function status(message, stateName="connecting") {
+  const el = document.getElementById("syncStatus");
+  if (!el) return;
+  el.dataset.state = stateName;
+  document.getElementById("syncText").textContent = message;
+}
+
+function queueWrite(path, value) {
+  if (!databaseReady || applyingRemote) return;
+  // Escreve somente o campo alterado: celulares diferentes não sobrescrevem
+  // o formulário inteiro quando duas pessoas editam ao mesmo tempo.
+  writeQueue = writeQueue.then(() => set(ref(db, `${sharedPath}/${path}`), value))
+    .then(() => update(sharedRef, { updatedAt: Date.now() }))
+    .catch(err => {
+      console.error("Firebase write error:", err);
+      status("Falha ao salvar. Verifique a conexão e as regras do Firebase.", "error");
+    });
+}
+
+function keyFor(section, catIndex, itemIndex) {
+  return `${section}-${catIndex}-${itemIndex}`;
+}
+
+const pre = [
+  {title:"1. Congá & Elementos",items:[
+    "Limpar & Energizar o Congá",
+    "Lavar as Quartinhas",
+    "Passar um Pano com Alfazema no Congá",
+    "Firmar as Velas Palito",
+    "Acender as Velas de 7 Dias",
+    "Organizar os Elementos que serão utilizados durante a Gira"
+  ]},
+  {title:"2. Atrás do Congá",items:[
+    "Organizar as Prateleiras atrás do Congá (Passar pano nas bebidas e organizar a caixa da Mãe e do Pai)",
+    "Organizar as Velas Palito (Retirar, Limpar e colocar no Lugar)",
+    "Organizar as Velas de 7 Dias (Retirar, Limpar e colocar no Lugar)",
+    "Organizar os Copos e Cuias (Retirar, Limpar e colocar no Lugar)"
+  ]},
+  {title:"3. Pontos de Força",items:[
+    "Limpar & Energizar: Pretos-Velhos",
+    "Limpar & Energizar: Cruzeiro das Almas",
+    "Limpar & Energizar: Pedreira de Xangô",
+    "Limpar & Energizar: Ogum",
+    "Limpar & Energizar: Casa de Exu",
+    "Limpar & Energizar: Exu da Porteira",
+    "Limpar & Energizar: Iemanjá",
+    "Limpar & Energizar: Choupana"
+  ]},
+  {title:"4. Plantas",items:[
+    "Cuidar das Plantas da Choupana",
+    "Cuidar do Jardim de Ossain"
+  ]},
+  {title:"5. Limpeza dos Ambientes",items:[
+    "Lavar o Banheiro Interno",
+    "Lavar o Banheiro Externo",
+    "Lavar a Casa de Banho",
+    "Limpar as Cadeiras",
+    "Limpar o Chão do Sagrado"
+  ]},
+  {title:"6. Área Externa",items:[
+    "Varrer o Corredor Externo",
+    "Deixar a Pia limpa",
+    "Organizar o Corredor Externo",
+    "Varrer toda a Área Externa",
+    "Colocar a Faixa"
+  ]},
+  {title:"7. Cozinha",items:[
+    "Limpar e Organizar os Armários",
+    "Limpar e Organizar a Geladeira",
+    "Passar pano no Chão da Cozinha"
+  ]},
+  {title:"8. Salão",items:[
+    "Colocar Café para os Pretos-Velhos",
+    "Trocar a Água dos Filtros",
+    "Repor os Copos Descartáveis",
+    "Montar a Assistência",
+    "Colocar os Atabaques no sol",
+    "Colocar água para a Mãe, o Pai e os Atabaqueiros"
+  ]},
+  {title:"9. Defumação",items:[
+    "Colocar os Carvões no Acendedor para a defumação"
+  ]},
+  {title:"10. Preparações Ritualísticas",items:[
+    {text:"Fazer os Padês",note:"Confirmar com a Mãe quais padês serão feitos.",detailField:"padesDetails"},
+    {text:"Preparar o Banho",note:"Confirmar com a Mãe qual banho será preparado."},
+    "Trocar o Contra-Ajé"
+  ]}
+];
+
+const post = [
+  {title:"1. Congá & Elementos",items:[
+    "Recolher a mesa do Congá",
+    "Recolher e Guardar os Elementos usados durante a Gira",
+    "Recolher os restos de Velas para descarte",
+    "Organizar novamente as Prateleiras atrás do Congá"
+  ]},
+  {title:"2. Pontos de Força & Padês",items:[
+    "Recolher os Padês da Casa de Exu",
+    "Recolher os Padês do Exu da Porteira",
+    "Recolher o Padê das Almas no Cruzeiro",
+    "Conferir e Organizar os pontos de força após a Gira"
+  ]},
+  {title:"3. Limpeza dos Ambientes",items:[
+    "Lavar o Banheiro Interno",
+    "Lavar o Banheiro Externo",
+    "Lavar a Casa de Banho",
+    "Organizar as Cadeiras",
+    "Limpar o chão do Sagrado e da Assistência",
+    "Organizar o Quartinho Roncó"
+  ]},
+  {title:"4. Área Externa",items:[
+    "Varrer o Corredor Externo",
+    "Deixar a Pia limpa",
+    "Organizar o Corredor Externo",
+    "Varrer toda a Área Externa"
+  ]},
+  {title:"5. Cozinha & Utensílios",items:[
+    "Limpar e Organizar os Armários da Cozinha",
+    "Limpar e Organizar a Geladeira",
+    "Limpar o Fogão",
+    "Lavar os Alguidares utilizados e guardá-los em seus devidos lugares",
+    "Lavar e Guardar toda a Louça"
+  ]},
+  {title:"6. Banho & Materiais",items:[
+    "Descartar a Água do Banho",
+    "Lavar o Tonel utilizado",
+    "Levar os Panos usados para lavar e trazê-los na próxima Gira"
+  ]},
+  {title:"7. Encerramento",items:[
+    "Recolher todo o Lixo",
+    "Destinar o Lixo ao descarte adequado",
+    "Retirar a Faixa"
+  ]}
+];
+
+function renderSection(groups, section, targetId) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  target.innerHTML = "";
+  groups.forEach((cat, ci) => {
+    const wrap = document.createElement("section"); wrap.className = "category";
+    const heading = document.createElement("h3"); heading.textContent = cat.title; wrap.appendChild(heading);
+    const list = document.createElement("div"); list.className = "task-list";
+    cat.items.forEach((raw, ii) => {
+      const item = typeof raw === "string" ? {text:raw} : raw;
+      const key = keyFor(section, ci, ii);
+      const row = document.createElement("div"); row.className = "task-row";
+      const label = document.createElement("label"); label.className = "task";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox"; checkbox.checked = !!state.checks[key]; checkbox.dataset.key = key;
+      checkbox.addEventListener("change", () => {
+        state.checks[key] = checkbox.checked;
+        queueWrite(`checks/${key}`, checkbox.checked);
+        updateProgress();
+      });
+      const text = document.createElement("span"); text.append(document.createTextNode(item.text));
+      if (item.note) { const small = document.createElement("small"); small.textContent = item.note; text.appendChild(small); }
+      label.append(checkbox, text);
+      const completedBy = document.createElement("input");
+      completedBy.type = "text"; completedBy.className = "completed-by";
+      completedBy.placeholder = "Nome de quem fez";
+      completedBy.setAttribute("aria-label", `Nome de quem fez: ${item.text}`);
+      completedBy.dataset.completedKey = key;
+      completedBy.value = state.completedBy[key] || "";
+      completedBy.addEventListener("input", () => {
+        state.completedBy[key] = completedBy.value;
+        queueWrite(`completedBy/${key}`, completedBy.value);
+      });
+      row.append(label, completedBy); list.appendChild(row);
+      if (item.detailField === "padesDetails") {
+        const extra = document.createElement("div"); extra.className = "task-extra";
+        const detailLabel = document.createElement("label"); detailLabel.htmlFor = "padesDetails"; detailLabel.textContent = "Quais padês devem ser feitos?";
+        const detailInput = document.createElement("input"); detailInput.type = "text"; detailInput.id = "padesDetails";
+        detailInput.placeholder = "Digite os padês separados por vírgula (ex.: Padê de Exu, Padê de Pombagira)";
+        detailInput.value = state.fields.padesDetails || "";
+        const padesChecklist = document.createElement("div"); padesChecklist.id = "padesChecklist"; padesChecklist.className = "pades-checklist";
+        detailInput.addEventListener("input", () => {
+          state.fields.padesDetails = detailInput.value;
+          queueWrite("fields/padesDetails", detailInput.value);
+          renderPadesChecklist();
+        });
+        extra.append(detailLabel, detailInput, padesChecklist); list.appendChild(extra);
+      }
+    });
+    wrap.appendChild(list); target.appendChild(wrap);
+  });
+}
+
+function getPadesItems() {
+  const names = (state.fields.padesDetails || "").split(/[,;\n]+/).map(name => name.trim()).filter(Boolean);
+  const seen = {};
+  return names.map(name => {
+    const base = name.toLocaleLowerCase("pt-BR");
+    seen[base] = (seen[base] || 0) + 1;
+    return { name, key: "pade-" + encodeURIComponent(base) + (seen[base] > 1 ? "-" + seen[base] : "") };
+  });
+}
+
+function renderPadesChecklist() {
+  const target = document.getElementById("padesChecklist");
+  if (!target) return;
+  target.innerHTML = "";
+  const items = getPadesItems();
+  if (!items.length) {
+    const hint = document.createElement("p"); hint.className = "helper";
+    hint.textContent = "Os padês informados aparecerão aqui como tarefas individuais.";
+    target.appendChild(hint); updateProgress(); return;
+  }
+  const title = document.createElement("div"); title.className = "pades-checklist-title";
+  title.textContent = "Checklist dos padês"; target.appendChild(title);
+  items.forEach(item => {
+    const row = document.createElement("div"); row.className = "task-row pade-row";
+    const label = document.createElement("label"); label.className = "task";
+    const checkbox = document.createElement("input"); checkbox.type = "checkbox";
+    checkbox.checked = !!state.checks[item.key]; checkbox.dataset.key = item.key;
+    checkbox.addEventListener("change", () => {
+      state.checks[item.key] = checkbox.checked;
+      queueWrite(`checks/${item.key}`, checkbox.checked); updateProgress();
+    });
+    const name = document.createElement("span"); name.textContent = item.name; label.append(checkbox, name);
+    const completedBy = document.createElement("input"); completedBy.type = "text"; completedBy.className = "completed-by";
+    completedBy.placeholder = "Nome de quem fez"; completedBy.setAttribute("aria-label", "Nome de quem fez: " + item.name);
+    completedBy.dataset.completedKey = item.key; completedBy.value = state.completedBy[item.key] || "";
+    completedBy.addEventListener("input", () => {
+      state.completedBy[item.key] = completedBy.value;
+      queueWrite(`completedBy/${item.key}`, completedBy.value);
+    });
+    row.append(label, completedBy); target.appendChild(row);
+  });
+}
+
+function updateProgress() {
+  for (const [section, groups] of [["pre",pre],["post",post]]) {
+    let total = 0, done = 0;
+    groups.forEach((cat,ci) => cat.items.forEach((_,ii) => {
+      total++; if (state.checks[keyFor(section,ci,ii)]) done++;
+    }));
+    if (section === "pre") getPadesItems().forEach(item => { total++; if (state.checks[item.key]) done++; });
+    const countEl = document.getElementById(section+"Count");
+    const barEl = document.getElementById(section+"Progress");
+    if (countEl) countEl.textContent = `${done}/${total} concluídos`;
+    if (barEl) barEl.style.width = (total ? done/total*100 : 0) + "%";
+  }
+}
+
+function renderAll() {
+  ["giraDate","giraType","responsible","exitGroup"].forEach(id => {
+    const field = document.getElementById(id);
+    if (field && document.activeElement !== field) field.value = state.fields[id] || "";
+  });
+  document.querySelectorAll('input[type="checkbox"][data-key]').forEach(el => {
+    el.checked = !!state.checks[el.dataset.key];
+  });
+  document.querySelectorAll('input[data-completed-key]').forEach(el => {
+    if (document.activeElement !== el) el.value = state.completedBy[el.dataset.completedKey] || "";
+  });
+  const padesInput = document.getElementById("padesDetails");
+  if (padesInput && document.activeElement !== padesInput) padesInput.value = state.fields.padesDetails || "";
+  renderPadesChecklist(); updateProgress();
+}
+
+function syncFields() {
+  ["giraDate","giraType","responsible","exitGroup"].forEach(id => {
+    const field = document.getElementById(id);
+    if (!field) return;
+    field.value = state.fields[id] || "";
+    field.addEventListener("input", () => {
+      state.fields[id] = field.value;
+      queueWrite(`fields/${id}`, field.value);
+    });
+  });
+}
+
+function activateTab(which) {
+  const isPre = which === "pre";
+  document.getElementById("prePanel").hidden = !isPre;
+  document.getElementById("postPanel").hidden = isPre;
+  document.getElementById("preTab").setAttribute("aria-selected", String(isPre));
+  document.getElementById("postTab").setAttribute("aria-selected", String(!isPre));
+}
+document.getElementById("preTab").addEventListener("click", () => activateTab("pre"));
+document.getElementById("postTab").addEventListener("click", () => activateTab("post"));
+window.addEventListener("beforeprint", () => {
+  document.getElementById("prePanel").hidden = false;
+  document.getElementById("postPanel").hidden = false;
+});
+window.addEventListener("afterprint", () => {
+  const active = document.getElementById("postTab").getAttribute("aria-selected") === "true" ? "post" : "pre";
+  activateTab(active);
+});
+document.getElementById("pdfBtn").addEventListener("click", () => window.print());
+
+document.getElementById("resetChecks").addEventListener("click", async () => {
+  if (!confirm("Deseja desmarcar todas as tarefas? Essa alteração será sincronizada com todos os dispositivos.")) return;
+  state.checks = {};
+  renderAll();
+  if (!databaseReady) { status("Banco ainda não está pronto para gravação.", "error"); return; }
+  try {
+    await set(ref(db, `${sharedPath}/checks`), {});
+    await update(sharedRef, { updatedAt: Date.now() });
+  } catch (err) { console.error(err); status("Falha ao desmarcar no banco de dados.", "error"); }
+});
+
+document.getElementById("clearAll").addEventListener("click", async () => {
+  if (!confirm("Isso apagará todos os textos, nomes e marcações de todos os telefones. Continuar?")) return;
+  state = emptyState(); renderAll();
+  if (!databaseReady) { status("Banco ainda não está pronto para gravação.", "error"); return; }
+  try {
+    await set(sharedRef, { ...state, updatedAt: Date.now() });
+  } catch (err) { console.error(err); status("Falha ao limpar no banco de dados.", "error"); }
+});
+
+onValue(connectedRef, snap => {
+  if (snap.val() === true) {
+    status(databaseReady ? "Conectado: sincronização em tempo real ativa." : "Conectado ao Firebase; aguardando dados...", "connecting");
+  } else status("Sem conexão. Aguardando reconexão para sincronizar...", "offline");
+}, err => {
+  console.error(err); status("Não foi possível verificar a conexão do Firebase.", "error");
+});
+
+async function initSync() {
+  onValue(sharedRef, snapshot => {
+    const remote = snapshot.val();
+    if (!remote || typeof remote !== "object") {
+      // Só cria a estrutura inicial se o banco realmente estiver vazio.
+      if (!initializedFromServer && databaseReady) {
+        initializedFromServer = true;
+        set(sharedRef, { ...emptyState(), updatedAt: Date.now() })
+          .catch(err => { console.error(err); status("Não foi possível inicializar os dados no Firebase.", "error"); });
+      }
+      return;
+    }
+    initializedFromServer = true;
+    const next = {
+      fields: { ...emptyState().fields, ...(remote.fields || {}) },
+      checks: remote.checks || {},
+      completedBy: remote.completedBy || {}
+    };
+    const fingerprint = JSON.stringify(next);
+    if (fingerprint !== lastRemoteFingerprint) {
+      applyingRemote = true;
+      state = next;
+      lastRemoteFingerprint = fingerprint;
+      renderAll();
+      applyingRemote = false;
+    }
+    status("Conectado: sincronização em tempo real ativa.", "connected");
+  }, err => {
+    console.error("Firebase read error:", err);
+    status("Erro ao ler o banco. Confira as regras do Realtime Database.", "error");
+  });
+}
+
+syncFields();
+renderSection(pre, "pre", "preChecklist");
+renderSection(post, "post", "postChecklist");
+renderAll();
+
+// Sem login: conexão direta ao Realtime Database.
+ // As regras do Realtime Database precisam permitir leitura e gravação sem autenticação
+ // para este caminho; restrinja o acesso de outra forma se o banco contiver dados privados.
+databaseReady = true;
+status("Conectando ao banco de dados...", "connecting");
+await initSync();
+</script>
+</body>
+</html>
